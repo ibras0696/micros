@@ -1,0 +1,23 @@
+global:
+    scrape_interval: 10s
+
+scrape_configs:
+    - job_name: "auth-svc"
+      static_configs:
+          - targets: ["auth-svc:8001"]
+            labels:
+                group: "services"
+
+
+    - job_name: "task-svc"
+      static_configs:
+          - targets: ["task-svc:8002"]
+            labels:
+                group: "services"
+
+
+    - job_name: "notify-svc"
+      static_configs:
+          - targets: ["notify-svc:8003"]
+            labels:
+                group: "services"
