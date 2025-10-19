@@ -7,7 +7,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from app.settings import settings
 
-pwd_ctx = CryptContext(shemes=['bcrypt'], deprecated="auto")
+pwd_ctx = CryptContext(schemes=['bcrypt'], deprecated="auto")
 
 # Загрузка ключей (PEM)
 PRIVATE_KEY = Path(settings.JWT_PRIVATE_KEY_PATH).read_text()

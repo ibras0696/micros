@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
+from app.routers import auth_router
 
 app = FastAPI(title="Auth Service")
+app.include_router(auth_router)
 
 
 @app.get("/healthz")

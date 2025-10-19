@@ -193,3 +193,6 @@ test.py
 
 # Игнор баз
 auth-svc/auth.db
+auth-svc/keys/
+# Игнор токенов
+auth-svc/jwt_*
