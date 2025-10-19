@@ -7,13 +7,18 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 
-# from app.db import Base/
-
 def utcnow() -> datetime:
+    """
+    Получение текущего времени в UTC
+    :return: datetime: текущее время в UTC
+    """
     return datetime.now(tz=timezone.utc)
 
 
 class User(Base):
+    """
+    Модель пользователя
+    """
     __tablename__ = 'users'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -23,7 +28,11 @@ class User(Base):
 
     tokens: Mapped[list[RefreshToken]] = relationship(back_populates='user', cascade="all, delete-orphan")
 
+
 class RefreshToken(Base):
+    """
+    Модель рефреш токена
+    """
     __tablename__ = 'refresh_tokens'
 
     jti: Mapped[str] = mapped_column(String(36), primary_key=True)

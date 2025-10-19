@@ -16,5 +16,9 @@ SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=As
 
 
 async def get_session() -> AsyncGenerator[AsyncSession | Any, Any]:
+    """
+    Получение сессии для работы с БД
+    :return: AsyncGenerator[AsyncSession | Any, Any]:
+    """
     async with SessionLocal() as session:
         yield session

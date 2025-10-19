@@ -6,6 +6,7 @@ app = FastAPI(title="Auth Service")
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
+    """Проверка состояния сервиса"""
     return {"status": "oc"}
 
 
