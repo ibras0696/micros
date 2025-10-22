@@ -61,14 +61,17 @@ async def prepare_db() -> AsyncGenerator[None, Any]:
     Создаёт и чистит схему БД перед и после сессии тестов.
     :return: None
     """
-    # создаём схему один раз
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    # чистим схему
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+
+    try:
+        yield
+    finally:
+        # подчистить схему и освободить коннекты всегда
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
 
 
 @pytest.fixture
