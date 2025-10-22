@@ -55,6 +55,15 @@ import app.main
 from app.db import Base, engine
 
 
+@pytest.fixture
+def anyio_backend():
+    """
+    Фикстура для выбора бэкенда anyio.
+    :return: str: название бэкенда
+    """
+    return "asyncio"
+
+
 @pytest.fixture(scope="function", autouse=True)
 async def prepare_db() -> AsyncGenerator[None, Any]:
     """

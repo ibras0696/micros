@@ -15,17 +15,20 @@ async def get_current_user(
     creds: HTTPAuthorizationCredentials = Depends(bearer),
     session: AsyncSession = Depends(get_session)
 ) -> User:
+    """
+    Достаём пользователя из access-токена (sub = строковый UUID пользователя).
+    """
     try:
         payload = verify_access(creds.credentials)
-        sub = payload.get('sub')
-
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='invalid token')
 
-    if not sub:
+    # Проверяем тип токена и наличие sub
+    if payload.get('type') != 'access' or not payload.get('sub'):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='invalid token')
 
-    user = (await session.execute(select(User).where(User.id))).scalar_one_or_none()
+    sub: str = payload['sub']  # строковый UUID
+    user = (await session.execute(select(User).where(User.id == sub))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='user not found')
 
