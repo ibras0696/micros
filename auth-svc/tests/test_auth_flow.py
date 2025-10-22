@@ -3,7 +3,13 @@ from httpx import AsyncClient
 
 pytestmark = pytest.mark.anyio
 
+
 async def test_register_login_me_refresh(client: AsyncClient):
+    """
+    Полный сценарий: регистрация, получение данных о себе, логин, рефреш с ротацией
+    :param client: AsyncClient: асинхронный HTTP клиент
+    :return: None
+    """
     # 1) регистрация
     r = await client.post("/auth/register", json={"email": "u@example.com", "password": "secret123"})
     assert r.status_code == 201, r.text
