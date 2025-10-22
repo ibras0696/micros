@@ -7,7 +7,7 @@ from typing import Any, Generator, AsyncGenerator
 
 import pytest
 from pathlib import Path
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 
 # === 1) Готовим окружение ДО импортов приложения ===
 # shared in-memory sqlite (одна БД для всех коннектов)
@@ -16,15 +16,15 @@ os.environ["ACCESS_TTL"] = "60"
 os.environ["REFRESH_TTL"] = "3060"
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[AbstractEventLoop, Any, None]:
-    """
-    Создаёт и закрывает событийный цикл для асинхронных тестов.
-    :return: Generator[AbstractEventLoop, Any, None]: событийный цикл
-    """
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# @pytest.fixture(scope="session")
+# def event_loop() -> Generator[AbstractEventLoop, Any, None]:
+#     """
+#     Создаёт и закрывает событийный цикл для асинхронных тестов.
+#     :return: Generator[AbstractEventLoop, Any, None]: событийный цикл
+#     """
+#     loop = asyncio.new_event_loop()
+#     yield loop
+#     loop.close()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -55,7 +55,7 @@ import app.main
 from app.db import Base, engine
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 async def prepare_db() -> AsyncGenerator[None, Any]:
     """
     Создаёт и чистит схему БД перед и после сессии тестов.
@@ -74,7 +74,8 @@ async def prepare_db() -> AsyncGenerator[None, Any]:
 async def client() -> AsyncGenerator[AsyncClient, Any]:
     """
     Фикстура для асинхронного HTTP клиента, связанного с приложением.
-    :return: AsyncClient: асинхронный HTTP клиент
+    :return: AsyncGenerator[AsyncClient, Any]: асинхронный HTTP клиент
     """
-    async with AsyncClient(app=app.main.app, base_url="http://testserver") as ac:
+    transport = ASGITransport(app=app.main.app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
         yield ac
