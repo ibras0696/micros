@@ -19,6 +19,8 @@ services:
         container_name: auth-svc
         environment:
             PYTHONUNBUFFERED: "1"
+            JWT_PRIVATE_KEY_PATH: "/run/secrets/jwt_private.pem"
+            JWT_PUBLIC_KEY_PATH: "/run/secrets/jwt_public.pem"
         secrets:
             - jwt_private.pem
             - jwt_public.pem
