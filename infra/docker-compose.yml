@@ -15,10 +15,14 @@ services:
         networks: [ public, private ]
 
     auth-svc:
-        build: ../auth-svc
+        build:
+            context: ../auth-svc
+            dockerfile: Dockerfile
         container_name: auth-svc
+        restart: unless-stopped
         environment:
             PYTHONUNBUFFERED: "1"
+            DATABASE_URL: "sqlite+aiosqlite:///./auth.db"
             JWT_PRIVATE_KEY_PATH: "/run/secrets/jwt_private.pem"
             JWT_PUBLIC_KEY_PATH: "/run/secrets/jwt_public.pem"
         secrets:
