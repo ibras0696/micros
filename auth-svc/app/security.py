@@ -2,20 +2,40 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+import os
 import uuid
 from jose import jwt
 from passlib.context import CryptContext
+from functools import lru_cache
 from app.settings import settings
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Загрузка ключей (PEM)
-PRIVATE_KEY = Path(settings.JWT_PRIVATE_KEY_PATH).read_text()
-PUBLIC_KEY = Path(settings.JWT_PUBLIC_KEY_PATH).read_text()
 ALGO = "RS256"
 
 
-# Пароли
+# === RSA ключи (ленивая загрузка) ===
+
+@lru_cache
+def get_private_key() -> str:
+    """
+    Загрузка приватного RSA-ключа из файла.
+    :return: str: содержимое PEM-файла приватного ключа
+    """
+    path = Path(settings.JWT_PRIVATE_KEY_PATH)
+    return path.read_text()
+
+
+@lru_cache
+def get_public_key() -> str:
+    """
+    Загрузка публичного RSA-ключа из файла.
+    :return: str: содержимое PEM-файла публичного ключа
+    """
+    path = Path(settings.JWT_PUBLIC_KEY_PATH)
+    return path.read_text()
+
+
+# === Работа с паролями ===
 
 def hash_password(plain: str) -> str:
     """
@@ -36,60 +56,65 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_ctx.verify(plain, hashed)
 
 
-# JWT Access/Refresh
+# === JWT Access / Refresh ===
 
 def _now() -> datetime:
-    """
-    Получение текущего времени в UTC
-    :return: datetime: текущее время в UTC
-    """
+    """Получение текущего времени в UTC"""
     return datetime.now(tz=timezone.utc)
 
 
 def make_access_token(sub: str) -> str:
     """
-    Создание access токена
+    Создание access-токена
     :param sub: объект токена (обычно user id)
     :return: str: JWT access токен
     """
     exp = _now() + timedelta(seconds=settings.ACCESS_TTL)
-    payload: dict[str, Any] = {"sub": sub, "iss": settings.JWT_ISS, "exp": exp}
-    return jwt.encode(payload, PRIVATE_KEY, algorithm=ALGO)
+    payload: dict[str, Any] = {
+        "sub": sub,
+        "iss": settings.JWT_ISS,
+        "exp": exp,
+        "type": "access",
+    }
+    return jwt.encode(payload, get_private_key(), algorithm=ALGO)
 
 
 def make_refresh_token(sub: str, jti: str) -> str:
     """
-    Создание refresh токена
+    Создание refresh-токена
     :param sub: объект токена (обычно user id)
     :param jti: уникальный идентификатор токена
     :return: str: JWT refresh токен
     """
     exp = _now() + timedelta(seconds=settings.REFRESH_TTL)
-    payload: dict[str, Any] = {"sub": sub, "iss": settings.JWT_ISS, "exp": exp, "jti": jti}
-    return jwt.encode(payload, PRIVATE_KEY, algorithm=ALGO)
+    payload: dict[str, Any] = {
+        "sub": sub,
+        "iss": settings.JWT_ISS,
+        "exp": exp,
+        "jti": jti,
+        "type": "refresh",
+    }
+    return jwt.encode(payload, get_private_key(), algorithm=ALGO)
 
 
 def verify_access(token: str) -> dict[str, Any]:
     """
-    Верификация access токена
-    :param token: str: JWT access токен
+    Верификация access-токена
+    :param token: JWT access токен
     :return: dict[str, Any]: полезная нагрузка токена
     """
-    return jwt.decode(token, PUBLIC_KEY, algorithms=[ALGO], options={"verify_aud": False})
+    return jwt.decode(token, get_public_key(), algorithms=[ALGO], options={"verify_aud": False})
 
 
 def verify_refresh(token: str) -> dict[str, Any]:
     """
-    Верификация refresh токена
-    :param token: str: JWT refresh токен
+    Верификация refresh-токена
+    :param token: JWT refresh токен
     :return: dict[str, Any]: полезная нагрузка токена
     """
-    return jwt.decode(token, PUBLIC_KEY, algorithms=[ALGO], options={"verify_aud": False})
+    return jwt.decode(token, get_public_key(), algorithms=[ALGO], options={"verify_aud": False})
 
 
 def new_jti() -> str:
-    """
-    Генерация нового уникального идентификатора JTI для refresh токена
-    :return: str: новый JTI
-    """
+    """Генерация нового уникального идентификатора JTI"""
     return str(uuid.uuid4())

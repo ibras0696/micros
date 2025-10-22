@@ -5,11 +5,15 @@ import asyncio
 from asyncio import AbstractEventLoop
 from typing import Any, Generator, AsyncGenerator
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+
 import pytest
 from pathlib import Path
 from httpx import AsyncClient, ASGITransport
 
 # === 1) Готовим окружение ДО импортов приложения ===
+os.environ["JWT_ISS"] = "taskhub-auth"
 # shared in-memory sqlite (одна БД для всех коннектов)
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///file:test.db?mode=memory&cache=shared&uri=true"
 os.environ["ACCESS_TTL"] = "60"
@@ -26,24 +30,40 @@ os.environ["REFRESH_TTL"] = "3060"
 #     yield loop
 #     loop.close()
 
-
 @pytest.fixture(scope="session", autouse=True)
 def jwt_keys(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
     """
-    Создаём временные JWT ключи и настраиваем пути в окружении.
-    :param tmp_path_factory: pytest.TempPathFactory: фабрика временных путей
-    :return: dict[str, Path]: пути к приватному и публичному ключам
+    Создаёт временные RSA-ключи для JWT и прописывает пути в окружении.
+    :param tmp_path_factory: pytest.TempPathFactory — фабрика временных путей
+    :return: dict[str, Path] — пути к приватному и публичному ключам
     """
+
+    # Временная директория для ключей
     tmp = tmp_path_factory.mktemp("keys")
     priv = tmp / "jwt_private.pem"
     pub = tmp / "jwt_public.pem"
 
-    # ⚠️ Лучше положить реальные ключи. Для примера — простые строки (HS256 проще)
-    # Если используешь RS256 — подставь валидные PEM.
-    priv.write_text("test-secret")  # если перейдёшь на HS256
-    pub.write_text("test-public")  # для RS256 замени на реальный PUBLIC
+    # Генерируем RSA-пару (2048 бит)
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
-    # Если у тебя security.py читает файлы по путям:
+    # Сериализуем приватный ключ (PKCS8, без пароля)
+    priv_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    # Сериализуем публичный ключ (SubjectPublicKeyInfo)
+    pub_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    # Сохраняем ключи во временные файлы
+    priv.write_bytes(priv_pem)
+    pub.write_bytes(pub_pem)
+
+    # Прописываем пути в окружение (чтобы Settings мог их подхватить)
     os.environ["JWT_PRIVATE_KEY_PATH"] = str(priv)
     os.environ["JWT_PUBLIC_KEY_PATH"] = str(pub)
 

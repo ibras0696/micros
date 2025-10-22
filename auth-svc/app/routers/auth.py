@@ -91,6 +91,70 @@ async def login(data: LoginIn, session: Annotated[AsyncSession, Depends(get_sess
     )
 
 
+@router.post("/refresh", response_model=TokenPairOut)
+async def refresh_token(
+    data: dict,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> TokenPairOut:
+    """
+    Ротация refresh-токена.
+    Проверяет валидность старого refresh, отзывает его и выдаёт новую пару токенов.
+    :param data: тело запроса, содержащее refresh_token
+    :param session: сессия базы данных
+    :return: новая пара access/refresh токенов
+    """
+    from app.security import verify_refresh
+
+    raw_token = data.get("refresh_token")
+    if not raw_token:
+        raise HTTPException(status_code=400, detail="refresh_token required")
+
+    # Декодируем refresh-токен
+    try:
+        payload = verify_refresh(raw_token)
+    except Exception:
+        raise HTTPException(status_code=401, detail="invalid token")
+
+    if payload.get("type") != "refresh" or not payload.get("jti"):
+        raise HTTPException(status_code=401, detail="invalid token")
+
+    jti_old = payload["jti"]
+    user_id = payload["sub"]
+
+    # Проверяем, что refresh существует и не отозван
+    rt = (
+        await session.execute(
+            select(RefreshToken).where(RefreshToken.jti == jti_old, RefreshToken.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+
+    if not rt or rt.revoked:
+        raise HTTPException(status_code=401, detail="refresh token revoked or not found")
+
+    # Отзываем старый refresh-токен
+    await session.execute(
+        update(RefreshToken).where(RefreshToken.jti == jti_old).values(revoked=True)
+    )
+
+    # Создаём новый refresh-токен
+    jti_new = new_jti()
+    new_rt = RefreshToken(
+        jti=jti_new,
+        user_id=user_id,
+        issued_at=utcnow(),
+        expires_at=utcnow() + timedelta(seconds=settings.REFRESH_TTL),
+        revoked=False,
+    )
+    session.add(new_rt)
+    await session.commit()
+
+    # Возвращаем новую пару токенов
+    return TokenPairOut(
+        access_token=make_access_token(user_id),
+        refresh_token=make_refresh_token(user_id, jti_new),
+    )
+
+
 @router.get("/me", response_model=MeOut)
 async def me(user: Annotated[User, Depends(get_current_user)]) -> MeOut:
     """
