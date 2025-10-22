@@ -55,7 +55,7 @@ import app.main
 from app.db import Base, engine
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 async def prepare_db() -> AsyncGenerator[None, Any]:
     """
     Создаёт и чистит схему БД перед и после сессии тестов.
@@ -63,6 +63,7 @@ async def prepare_db() -> AsyncGenerator[None, Any]:
     """
     # создаём схему один раз
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
     # чистим схему
