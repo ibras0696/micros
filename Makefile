@@ -6,7 +6,11 @@ up: ## Запуск всех сервисов (docker compose up)
 	@echo "🐳 Starting services..."
 	cd infra && docker compose up -d --build
 
-down: ## Остановка всех контейнеров и удаление volume
+down: ## Остановка всех контейнеров и без удаления
+	@echo "🛑 Stopping services..."
+	cd infra && docker compose down
+
+down_del: ## Остановка всех контейнеров и удаление volume
 	@echo "🛑 Stopping services..."
 	cd infra && docker compose down -v
 
