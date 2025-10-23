@@ -1,16 +1,24 @@
 from __future__ import annotations
-from datetime import timedelta, datetime, timezone
-from uuid import uuid4
+
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
-from app.models import User, RefreshToken
-from app.schemes import RegisterIn, LoginIn, TokenPairOut, MeOut
-from app.security import hash_password, verify_password, make_access_token, make_refresh_token, new_jti
 from app.deps import get_current_user
+from app.models import RefreshToken, User
+from app.schemes import LoginIn, MeOut, RegisterIn, TokenPairOut
+from app.security import (
+    hash_password,
+    make_access_token,
+    make_refresh_token,
+    new_jti,
+    verify_password,
+)
 from app.settings import settings
 
 
@@ -36,7 +44,7 @@ async def register(data: RegisterIn, session: Annotated[AsyncSession, Depends(ge
     # Проверяем уникальность email
     exists = (await session.execute(select(User).where(User.email == data.email))).scalar_one_or_none()
     if exists:
-        raise HTTPException(status_code=400, detail="email already registered")
+        raise HTTPException(status_code=400, detail="email already registered") from None
 
     user = User(id=str(uuid4()), email=data.email, password_hash=hash_password(data.password))
     session.add(user)
@@ -71,7 +79,7 @@ async def login(data: LoginIn, session: Annotated[AsyncSession, Depends(get_sess
     user = (await session.execute(select(User).where(User.email == data.email))).scalar_one_or_none()
     # Проверяем, что пользователь существует
     if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="invalid credentials")
+        raise HTTPException(status_code=401, detail="invalid credentials") from None
 
     # Создаем токер рефреш + выдать пару токенов
     jti = new_jti()
@@ -107,16 +115,16 @@ async def refresh_token(
 
     raw_token = data.get("refresh_token")
     if not raw_token:
-        raise HTTPException(status_code=400, detail="refresh_token required")
+        raise HTTPException(status_code=400, detail="refresh_token required") from None
 
     # Декодируем refresh-токен
     try:
         payload = verify_refresh(raw_token)
     except Exception:
-        raise HTTPException(status_code=401, detail="invalid token")
+        raise HTTPException(status_code=401, detail="invalid token") from None
 
     if payload.get("type") != "refresh" or not payload.get("jti"):
-        raise HTTPException(status_code=401, detail="invalid token")
+        raise HTTPException(status_code=401, detail="invalid token") from None
 
     jti_old = payload["jti"]
     user_id = payload["sub"]

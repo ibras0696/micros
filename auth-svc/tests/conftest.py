@@ -1,16 +1,15 @@
 # tests/conftest.py
 from __future__ import annotations
-import os
-import asyncio
-from asyncio import AbstractEventLoop
-from typing import Any, Generator, AsyncGenerator
 
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
+import os
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Any
 
 import pytest
-from pathlib import Path
-from httpx import AsyncClient, ASGITransport
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from httpx import ASGITransport, AsyncClient
 
 # === 1) Готовим окружение ДО импортов приложения ===
 os.environ["JWT_ISS"] = "taskhub-auth"

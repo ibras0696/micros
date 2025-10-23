@@ -1,12 +1,14 @@
 from __future__ import annotations
+
+import uuid
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
-import os
-import uuid
+
 from jose import jwt
 from passlib.context import CryptContext
-from functools import lru_cache
+
 from app.settings import settings
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")

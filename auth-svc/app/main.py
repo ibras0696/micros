@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from app.routers import auth_router
+
+from app.routers import router as auth_router
 
 app = FastAPI(title="Auth Service")
 app.include_router(auth_router)

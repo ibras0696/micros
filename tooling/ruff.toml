@@ -1,3 +1,15 @@
+# === Ruff configuration ===
 line-length = 100
 select = ["E", "F", "I", "B", "UP"]
 ignore = ["E501"]
+
+[per-file-ignores]
+# E402 — "Module level import not at top of file"
+"auth-svc/alembic/env.py" = ["E402"]
+"auth-svc/tests/conftest.py" = ["E402"]
+
+
+[lint.per-file-ignores]
+"auth-svc/app/deps.py" = ["B008"]
+"auth-svc/alembic/env.py" = ["E402"]
+"auth-svc/tests/conftest.py" = ["E402"]
