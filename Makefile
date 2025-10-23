@@ -14,6 +14,10 @@ down_del: ## Остановка всех контейнеров и удален�
 	@echo "🛑 Stopping services..."
 	cd infra && docker compose down -v
 
+down_up_logs: ## Перезапуск всех сервисов с просмотром логов
+	@echo "🔄 Restarting services with logs..."
+	cd infra && docker compose down && docker compose up -d --build && docker-compose logs -f --tail=200
+
 logs: ## Просмотр последних логов всех контейнеров
 	cd infra && docker compose logs -f --tail=200
 
