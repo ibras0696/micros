@@ -1,15 +1,53 @@
-# === Ruff configuration ===
+# === Ruff configuration (production level) ===
+
+# Общие параметры
 line-length = 100
-select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501"]
+target-version = "py312"
+fix = true
+respect-gitignore = true
 
-[per-file-ignores]
-# E402 — "Module level import not at top of file"
-"auth-svc/alembic/env.py" = ["E402"]
-"auth-svc/tests/conftest.py" = ["E402"]
+# Исключаем системные и сборочные папки
+exclude = [
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".mypy_cache",
+    ".pytest_cache",
+    "alembic/versions",
+]
 
+# === Linter rules ===
+[lint]
+# Основные правила: ошибки (E), предупреждения (F), импорт (I), best practices (B), up-grade советы (UP)
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "A", "DTZ"]
+ignore = [
+    "E501", # длинные строки — не ломаем JSON/URL/SQL
+]
 
+# === Переопределения для отдельных файлов ===
 [lint.per-file-ignores]
-"auth-svc/app/deps.py" = ["B008"]
+# Alembic и bootstrap-тесты — разрешаем не-верхние импорты
 "auth-svc/alembic/env.py" = ["E402"]
 "auth-svc/tests/conftest.py" = ["E402"]
+# FastAPI deps — допускаем Depends(...) в сигнатурах
+"auth-svc/app/deps.py" = ["B008"]
+
+# === Автоматическое упорядочивание импортов ===
+[lint.isort]
+combine-as-imports = true
+known-first-party = ["app"]
+lines-after-imports = 2
+lines-between-types = 1
+order-by-type = true
+force-sort-within-sections = true
+
+# === Форматирование (совместимо с ruff format) ===
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+import uuid
 
 from jose import jwt
 from passlib.context import CryptContext
 
 from app.settings import settings
+
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGO = "RS256"
@@ -62,7 +63,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def _now() -> datetime:
     """Получение текущего времени в UTC"""
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def make_access_token(sub: str) -> str:

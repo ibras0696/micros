@@ -5,6 +5,7 @@ import os
 import dotenv
 from pydantic import BaseModel
 
+
 dotenv.load_dotenv()
 
 

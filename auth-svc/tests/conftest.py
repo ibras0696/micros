@@ -1,15 +1,16 @@
 # tests/conftest.py
 from __future__ import annotations
 
-import os
 from collections.abc import AsyncGenerator
+import os
 from pathlib import Path
 from typing import Any
 
-import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import ASGITransport, AsyncClient
+import pytest
+
 
 # === 1) Готовим окружение ДО импортов приложения ===
 os.environ["JWT_ISS"] = "taskhub-auth"
@@ -70,8 +71,8 @@ def jwt_keys(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
 
 
 # === 2) Теперь можно импортировать приложение/БД ===
-import app.main
 from app.db import Base, engine
+import app.main
 
 
 @pytest.fixture

@@ -9,6 +9,7 @@ from app.db import get_session
 from app.models import User
 from app.security import verify_access
 
+
 bearer = HTTPBearer(auto_error=True)
 
 

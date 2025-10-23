@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import uuid4
 
@@ -27,7 +27,7 @@ def utcnow() -> datetime:
     Получение текущего времени в UTC
     :return: datetime: текущее время в UTC
     """
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])

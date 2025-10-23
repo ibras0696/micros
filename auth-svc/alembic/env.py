@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 from logging.config import fileConfig
 from pathlib import Path
+import sys
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
 
 # --- Добавляем путь к app ---
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +19,7 @@ if str(SERVICE_ROOT) not in sys.path:
 # --- Импорты из приложения ---
 from app.db import Base
 from app.settings import settings
+
 
 # --- Конфигурация Alembic ---
 config = context.config
