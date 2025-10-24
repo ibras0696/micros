@@ -13,6 +13,7 @@ from app.db import get_session
 from app.deps import get_current_user
 from app.models import RefreshToken, User
 from app.schemes import LoginIn, MeOut, RegisterIn, TokenPairOut
+from app.settings import settings
 from app.security import (
     hash_password,
     make_access_token,
