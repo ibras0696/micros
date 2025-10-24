@@ -5,7 +5,6 @@ from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
-
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,15 +12,15 @@ from app.db import get_session
 from app.deps import get_current_user
 from app.models import RefreshToken, User
 from app.schemes import LoginIn, MeOut, RegisterIn, TokenPairOut
-from app.settings import settings
 from app.security import (
     hash_password,
     make_access_token,
     make_refresh_token,
     new_jti,
     verify_password,
-    verify_refresh
+    verify_refresh,
 )
+from app.settings import settings
 
 
 def utcnow() -> datetime:

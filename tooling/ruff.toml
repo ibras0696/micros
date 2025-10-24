@@ -28,6 +28,8 @@ ignore = [
 
 # === Переопределения для отдельных файлов ===
 [lint.per-file-ignores]
+# Разрешаем неиспользуемые импорты в роутерах (они нужны FastAPI)
+"auth-svc/app/routers/auth.py" = ["F401"]
 # Alembic и bootstrap-тесты — разрешаем не-верхние импорты
 "auth-svc/alembic/env.py" = ["E402"]
 "auth-svc/tests/conftest.py" = ["E402"]
@@ -39,7 +41,7 @@ ignore = [
 combine-as-imports = true
 known-first-party = ["app"]
 lines-after-imports = 2
-lines-between-types = 1
+#lines-between-types = 1
 order-by-type = true
 force-sort-within-sections = true
 
@@ -51,3 +53,5 @@ skip-magic-trailing-comma = false
 line-ending = "lf"
 docstring-code-format = true
 docstring-code-line-length = "dynamic"
+
+
