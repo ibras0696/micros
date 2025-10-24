@@ -5,6 +5,7 @@ from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,8 +19,8 @@ from app.security import (
     make_refresh_token,
     new_jti,
     verify_password,
+    verify_refresh
 )
-from app.settings import settings
 
 
 def utcnow() -> datetime:
@@ -111,7 +112,6 @@ async def refresh_token(
     :param session: сессия базы данных
     :return: новая пара access/refresh токенов
     """
-    from app.security import verify_refresh
 
     raw_token = data.get("refresh_token")
     if not raw_token:

@@ -1,0 +1,187 @@
+{
+  "export_meta": {
+    "export_date": "2025-10-24",
+    "timezone": "Europe/Helsinki",
+    "project_name": "Обучение Python / taskhub",
+    "model_style": "жесткий техлид/бизнес-партнер без воды, без неоправданного оптимизма, требовательный к DoD и цифрам"
+  },
+  "user_profile": {
+    "names_used": ["Ибрагим", "Ибра", "Ibragim Gataev"],
+    "role_focus": "Python backend developer (mid, целит mid+)",
+    "career_stack": ["Python 3.12", "FastAPI", "Django/DRF", "SQLAlchemy 2.0 (async)", "Pydantic v2", "Celery", "Redis", "Docker Compose", "GitHub Actions"],
+    "location_hint": "Краснодар / RU (упоминалось), сейчас в Финляндии",
+    "communication": {
+      "language": "ru",
+      "tone": "деловой, краткий, структурный, с пояснениями только по делу",
+      "style_rules": [
+        "не переписывать код целиком без необходимости",
+        "сначала патчи и минимальные изменения под текущее дерево",
+        "если не хватает контекста — запрашивать конкретные файлы/фрагменты",
+        "докстринги на русском, аннотации типов везде"
+      ]
+    }
+  },
+  "multi_project_context": {
+    "education_repo": "генератор .md материалов по стеку Python (строгий шаблон, навигация, практико-ориентированные файлы)",
+    "business_side": [
+      "ТРЕНЕР.FIT (зал + спортпит): интерес к окупаемости, рискам, масштабированию",
+      "Развлекательный центр (PC/PS5/бильярд + кофейня): модель доходов, прайсинг, идеи upsell"
+    ],
+    "misc": [
+      "тех.консалтинг по ПК/Ubuntu/периферии",
+      "креативные задания по фото/визуалам"
+    ]
+  },
+  "taskhub_state": {
+    "current_tree_hint": [
+      "auth-svc (готовый базовый сервис: регистрация, логин, refresh, me, alembic, JWT RS256)",
+      "task-svc (каркас был минимальный; во 2 спринте добавлены модели/миграции/CRUD/фильтры/пагинация/bulk/notify)",
+      "notify-svc (прием событий)",
+      "gateway (nginx, прокси на сервисы, rate-limit)",
+      "infra (docker-compose без поля version, grafana/prometheus)",
+      "tooling (ruff, mypy)"
+    ],
+    "ports_inside_docker": {
+      "auth-svc": 8000,
+      "task-svc": 8000,
+      "notify-svc": 8000,
+      "gateway": 80
+    },
+    "gateway_nginx": {
+      "policy": "rate-limit только для POST /tasks (реализовано через map по $request_method$uri) или альтернативно для всех non-GET",
+      "headers": ["X-Real-IP", "X-Forwarded-For", "X-Request-ID"]
+    },
+    "jwt_contract": {
+      "alg": "RS256",
+      "iss": "taskhub-auth",
+      "access_claims": ["sub", "iss", "type=access", "iat", "exp"],
+      "refresh_claims": ["sub", "iss", "type=refresh", "jti", "iat", "exp"],
+      "public_key_distribution": "в Sprint 2 — секрет-файл в task-svc; позже план JWKS"
+    },
+    "e2e_goal": "регистрация → логин → создать задачи → фильтр → done → событие в notify",
+    "db": {
+      "dev": "SQLite (aiosqlite) для обоих сервисов",
+      "prod_plan": "Postgres (переезд в следующем спринте)"
+    }
+  },
+  "sprint_1_auth": {
+    "done": [
+      "регистрация, логин, refresh, me",
+      "alembic миграции users/refresh_tokens",
+      "RS256 ключи",
+      "pytest + httpx.AsyncClient, покрытие ≥80%"
+    ],
+    "fixes_applied": [
+      "единый контракт JWT: type=access/refresh, iat",
+      "verify_access/verify_refresh: проверка iss и type",
+      "refresh: совместимость тел запроса (\"строка\" и {refresh_token})",
+      "refresh: проверка revoked/expired и replaced_by"
+    ],
+    "tests_extended": [
+      "повторная регистрация 400",
+      "неверный пароль 401",
+      "refresh старым jti 401",
+      "refresh без токена 400",
+      "оба формата тела для refresh работают"
+    ]
+  },
+  "sprint_2_tasks": {
+    "scope": [
+      "модели/миграции Task(id, owner_id, title, description, status, priority, due_at, created_at, updated_at)",
+      "CRUD (создать/список/деталь/patch)",
+      "фильтры: status, q (title/description ilike), min/max priority, due_from/due_to; пагинация limit/offset",
+      "массовая смена статусов /tasks/bulk-status",
+      "событие: при переходе в done → POST /notify/events {type: task_done, task_id, user_id, ts}",
+      "JWT защита всех /tasks* по access-токену",
+      "rate-limit на POST /tasks в gateway (строго POST); альтернативный вариант — non-GET"
+    ],
+    "compose_changes": [
+      "task-svc читает JWT_PUBLIC_KEY_PATH=/run/secrets/jwt_public.pem",
+      "JWT_ISS=taskhub-auth",
+      "NOTIFY_SVC_URL=http://notify-svc:8000",
+      "DATABASE_URL=sqlite+aiosqlite:///./task.db",
+      "секрет: jwt_public.pem примонтирован"
+    ],
+    "notify_svc": "минимальный приемщик /events со статусом 202 и логированием; best-effort",
+    "e2e_script_notes": [
+      "через gateway: /auth/* и /tasks/*",
+      "создать несколько задач; отфильтровать; перевести в done; проверить логи notify"
+    ]
+  },
+  "next_sprint_plan": {
+    "name": "Sprint 3 — Надёжность и прод-подготовка",
+    "items": [
+      {
+        "feature": "Transactional Outbox в task-svc",
+        "why": "исключить потерю событий при сбоях notify",
+        "DoD": [
+          "таблица outbox_events, запись в транзакции с бизнес-событием",
+          "фоновый ретрайер с backoff, метрики dispatch/failed",
+          "идемпотентность на стороне notify (event_id)"
+        ]
+      },
+      {
+        "feature": "JWKS + ротация ключей",
+        "why": "обновление ключей без рестартов task-svc",
+        "DoD": [
+          "auth-svc: /.well-known/jwks.json, kid в заголовке JWT",
+          "task-svc: периодический фетч JWKS, кэш и выбор по kid"
+        ]
+      },
+      {
+        "feature": "Postgres для auth-svc и task-svc",
+        "DoD": ["alembic миграции на PG", "индексы (owner_id,status,created_at)", "тесты зелёные на PG"]
+      },
+      {
+        "feature": "CI качество",
+        "DoD": ["ruff + mypy в PR", "pytest --cov для обоих сервисов", "порог покрытия ≥80%"]
+      },
+      {
+        "feature": "Наблюдаемость",
+        "DoD": [
+          "метрики RPS/ошибки/p95 latency, метрики outbox",
+          "трейсинг OTel (FastAPI + httpx) → Jaeger/Tempo",
+          "корреляция X-Request-ID от Nginx"
+        ]
+      },
+      {
+        "feature": "Анти-дубликаты и per-user лимиты",
+        "DoD": [
+          "Idempotency-Key для POST /tasks",
+          "Redis счётчик запросов на user_id"
+        ]
+      }
+    ]
+  },
+  "style_and_conventions": {
+    "compose": ["без поля version", "секреты через secrets", "минимальные env, без лишнего"],
+    "code": [
+      "типизация везде",
+      "docstring на русском, кратко и по делу",
+      "никаких глобальных переписываний — только патчи под текущее дерево",
+      "если что-то неясно — запросить конкретные файлы (пути/фрагменты)"
+    ],
+    "nginx": [
+      "по умолчанию лимитируем POST /tasks (строго)",
+      "альтернатива для простоты — лимит non-GET на /tasks/",
+      "везде прокидывать X-Request-ID"
+    ],
+    "testing": [
+      "pytest + httpx.AsyncClient",
+      "покрывать ветки ошибок",
+      "для task-svc: CRUD, фильтры, bulk, notify (заглушка/фейковый сервер)"
+    ]
+  },
+  "open_points": [
+    "убедиться, что все uvicorn сервисы слушают порт 8000 (соответствует nginx upstream)",
+    "добавить alembic ревизию init tasks, если не создана",
+    "минимальные тесты для task-svc (можно позже, но лучше сразу в Sprint 3)",
+    "подготовить миграцию на Postgres"
+  ],
+  "handy_e2e_commands": {
+    "register": "curl -s http://localhost/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"u@example.com\",\"password\":\"secret123\"}'",
+    "create_task": "curl -s http://localhost/tasks -H 'Authorization: Bearer $ACCESS' -H 'Content-Type: application/json' -d '{\"title\":\"Task A\",\"priority\":2}'",
+    "mark_done": "curl -s -X PATCH http://localhost/tasks/$TASK_ID -H 'Authorization: Bearer $ACCESS' -H 'Content-Type: application/json' -d '{\"status\":\"done\"}'",
+    "check_notify_logs": "docker logs notify-svc --tail=50 | grep task_done || true"
+  }
+}
